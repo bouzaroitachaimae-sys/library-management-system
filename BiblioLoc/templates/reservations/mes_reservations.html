@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Mes réservations — BiblioLoc{% endblock %}
+{% block extra_css %}
+<style>
+.page-header { background: var(--parchment); border-bottom: 1px solid var(--border); padding: 2rem 0; margin-bottom: 2rem; }
+.page-header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; }
+.reservations-list { display: flex; flex-direction: column; gap: 1rem; padding: 0 0 3rem; }
+.res-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 16px;
+    display: grid; grid-template-columns: 80px 1fr auto; gap: 1.25rem;
+    padding: 1.25rem; align-items: center; transition: box-shadow 0.2s;
+}
+.res-card:hover { box-shadow: 0 4px 16px rgba(26,18,8,0.08); }
+.res-card.retard { border-color: var(--rust); background: #fff8f8; }
+.res-cover { width: 80px; height: 100px; background: var(--parchment); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; flex-shrink: 0; }
+.res-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.res-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.2rem; }
+.res-author { font-size: 0.85rem; color: #888; margin-bottom: 0.6rem; }
+.res-dates { display: flex; gap: 1.5rem; font-size: 0.85rem; color: #555; flex-wrap: wrap; }
+.res-dates span { display: flex; align-items: center; gap: 0.3rem; }
+.res-retard { color: var(--rust); font-weight: 700; font-size: 0.82rem; margin-top: 0.4rem; }
+.res-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; min-width: 160px; }
+.res-price { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; color: var(--amber); margin-bottom: 0.25rem; text-align: right; }
+
+.empty-state { text-align: center; padding: 5rem 2rem; }
+.empty-state .icon { font-size: 5rem; margin-bottom: 1rem; }
+.empty-state h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem; }
+.empty-state p { color: #888; margin-bottom: 2rem; }
+
+.summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; }
+.stat-card .num { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--amber); }
+.stat-card .lbl { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1> Mes réservations</h1>
+        <p style="color:#888; margin-top:0.25rem;">Gérez vos locations de livres</p>
+    </div>
+</div>
+<div class="container">
+    {% if reservations %}
+    <div class="summary-stats">
+        <div class="stat-card"><div class="num">{{ reservations|length }}</div><div class="lbl">Total</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--sage)">{{ reservations|length }}</div><div class="lbl">Actives</div></div>
+        <a href="/livres/" class="stat-card" style="text-decoration:none; color:inherit; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--parchment)'" onmouseout="this.style.background='#fff'">
+            <div class="num" style="font-size:1.5rem"></div><div class="lbl">Parcourir</div>
+        </a>
+    </div>
+    <div class="reservations-list">
+        {% for res in reservations %}
+        <div class="res-card {% if res.est_en_retard %}retard{% endif %}">
+            <div class="res-cover">
+                {% if res.livre.couverture %}<img src="{{ res.livre.couverture.url }}" alt="">{% else %}{% endif %}
+            </div>
+            <div>
+                <div class="res-title">{{ res.livre.titre }}</div>
+                <div class="res-author">{{ res.livre.auteur }}</div>
+                <div class="res-dates">
+                    <span> Début : <strong>{{ res.date_debut|date:"d/m/Y" }}</strong></span>
+                    <span> Fin : <strong>{{ res.date_fin|date:"d/m/Y" }}</strong></span>
+                    <span>⏱ {{ res.duree_jours }} jour{{ res.duree_jours|pluralize }}</span>
+                </div>
+                {% if res.est_en_retard %}
+                <div class="res-retard"> Retard de {{ res.jours_retard }} jour{{ res.jours_retard|pluralize }} !</div>
+                {% endif %}
+                {% if res.notes %}<div style="font-size:0.82rem; color:#888; margin-top:0.4rem;"> {{ res.notes }}</div>{% endif %}
+            </div>
+            <div class="res-actions">
+                <div>
+                    {% if res.statut == 'en_attente' %}<span class="badge badge-warning"> En attente</span>
+                    {% elif res.statut == 'confirmee' %}<span class="badge badge-info"> Confirmée</span>
+                    {% elif res.statut == 'en_cours' %}<span class="badge badge-success"> En cours</span>
+                    {% elif res.statut == 'terminee' %}<span class="badge badge-secondary"> Terminée</span>
+                    {% elif res.statut == 'annulee' %}<span class="badge badge-danger"> Annulée</span>
+                    {% endif %}
+                </div>
+                <div class="res-price">{{ res.prix_total }} MAD</div>
+                {% if res.statut in 'en_attente,confirmee' %}
+                <form method="post" action="/reservations/annuler/{{ res.pk }}/" onsubmit="return confirm('Confirmer l\'annulation ?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm"> Annuler</button>
+                </form>
+                {% endif %}
+                <a href="/reservations/detail/{{ res.pk }}/" class="btn btn-outline btn-sm">Détails</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon"></div>
+        <h2>Aucune réservation</h2>
+        <p>Vous n'avez pas encore réservé de livre. Parcourez notre catalogue !</p>
+        <a href="/livres/" class="btn btn-amber">Découvrir les livres</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

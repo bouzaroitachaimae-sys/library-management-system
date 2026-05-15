@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}{{ livre.titre }} — BiblioLoc{% endblock %}
+{% block extra_css %}
+<style>
+.detail-layout { display: grid; grid-template-columns: 300px 1fr; gap: 3rem; padding: 3rem 0; }
+.book-cover-lg {
+    background: linear-gradient(135deg, var(--parchment), var(--border));
+    border-radius: 16px; height: 420px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6rem; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(26,18,8,0.15);
+    border: 1px solid var(--border);
+    position: sticky; top: 80px; align-self: start;
+}
+.book-cover-lg img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
+.book-detail h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; line-height: 1.2; margin-bottom: 0.5rem; }
+.book-detail .author { font-size: 1.1rem; color: #666; margin-bottom: 1.5rem; }
+.book-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; }
+.meta-tag { background: var(--parchment); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+.meta-tag strong { color: var(--amber); }
+.book-desc { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+.book-desc h3 { font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 0.75rem; }
+.book-desc p { color: #555; line-height: 1.7; }
+.reserve-card { background: #fff; border: 2px solid var(--amber); border-radius: 16px; padding: 2rem; }
+.reserve-card h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; margin-bottom: 0.25rem; }
+.price-display { font-size: 2rem; font-weight: 900; color: var(--amber); font-family: 'Playfair Display', serif; }
+.price-display span { font-size: 1rem; font-weight: 400; color: #888; }
+.avail-info { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; margin: 1rem 0; }
+.avail-yes { background: #d1fae5; color: #065f46; }
+.avail-no { background: #fee2e2; color: #991b1b; }
+.reserve-btn { width: 100%; padding: 1rem; font-size: 1rem; border-radius: 10px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div style="padding: 1rem 0; font-size: 0.85rem; color: #888;">
+        <a href="/" style="color: inherit; text-decoration: none;">Accueil</a> › 
+        <a href="/livres/" style="color: inherit; text-decoration: none;">Catalogue</a> › 
+        {{ livre.titre }}
+    </div>
+    <div class="detail-layout">
+        <div>
+            <div class="book-cover-lg">
+                {% if livre.couverture %}<img src="{{ livre.couverture.url }}" alt="{{ livre.titre }}">{% else %}{% endif %}
+            </div>
+        </div>
+        <div class="book-detail">
+            <h1>{{ livre.titre }}</h1>
+            <p class="author">par <strong>{{ livre.auteur }}</strong></p>
+            <div class="book-meta">
+                {% if livre.categorie %}<span class="meta-tag">{{ livre.categorie.nom }}</span>{% endif %}
+                {% if livre.annee_publication %}<span class="meta-tag"> {{ livre.annee_publication }}</span>{% endif %}
+                {% if livre.editeur %}<span class="meta-tag"> {{ livre.editeur }}</span>{% endif %}
+                {% if livre.isbn %}<span class="meta-tag">ISBN: {{ livre.isbn }}</span>{% endif %}
+                <span class="meta-tag"> <strong>{{ livre.nombre_exemplaires }}</strong> exemplaire{{ livre.nombre_exemplaires|pluralize }}</span>
+            </div>
+
+            {% if livre.description %}
+            <div class="book-desc">
+                <h3>Description</h3>
+                <p>{{ livre.description }}</p>
+            </div>
+            {% endif %}
+
+            <div class="reserve-card">
+                <h3>Réserver ce livre</h3>
+                <div class="price-display">{{ livre.prix_location_jour }} MAD <span>par jour</span></div>
+                <div class="avail-info {% if livre.est_disponible %}avail-yes{% else %}avail-no{% endif %}">
+                    {% if livre.est_disponible %}
+                     {{ livre.exemplaires_disponibles }} exemplaire{{ livre.exemplaires_disponibles|pluralize }} disponible{{ livre.exemplaires_disponibles|pluralize }}
+                    {% else %}
+                     Aucun exemplaire disponible actuellement
+                    {% endif %}
+                </div>
+                {% if livre.est_disponible %}
+                    {% if user.is_authenticated %}
+                    <a href="/reservations/reserver/{{ livre.pk }}/" class="btn btn-amber reserve-btn"> Choisir une période</a>
+                    {% else %}
+                    <a href="/accounts/login/?next=/reservations/reserver/{{ livre.pk }}/" class="btn btn-amber reserve-btn"> Se connecter pour réserver</a>
+                    {% endif %}
+                {% else %}
+                <button class="btn reserve-btn" style="background:#ccc; cursor:not-allowed;" disabled>Indisponible</button>
+                {% endif %}
+                <p style="font-size:0.8rem; color:#888; margin-top:0.75rem; text-align:center;">Période max : 30 jours</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

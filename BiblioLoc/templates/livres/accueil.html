@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}BiblioLoc — Accueil{% endblock %}
+{% block extra_css %}
+<style>
+.hero {
+    background: linear-gradient(135deg, var(--ink) 0%, #2d1f0a 60%, #4a2e0e 100%);
+    color: #fff;
+    padding: 5rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8860a' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-content { position: relative; max-width: 700px; margin: 0 auto; }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 1rem; }
+.hero h1 em { color: var(--amber-light); font-style: normal; }
+.hero p { font-size: 1.15rem; color: #ccc; margin-bottom: 2rem; }
+.hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.hero-btns a { padding: 0.85rem 2rem; border-radius: 10px; font-weight: 600; text-decoration: none; font-size: 1rem; transition: all 0.2s; }
+.hero-btns .primary { background: var(--amber); color: #fff; }
+.hero-btns .primary:hover { background: var(--amber-light); color: var(--ink); }
+.hero-btns .secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+.hero-btns .secondary:hover { background: rgba(255,255,255,0.2); }
+
+.stats-bar { background: var(--parchment); border-bottom: 1px solid var(--border); }
+.stats-bar .inner { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem; display: flex; gap: 3rem; justify-content: center; }
+.stat { text-align: center; }
+.stat .number { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--amber); }
+.stat .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.section { padding: 3rem 0; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; margin-bottom: 0.25rem; }
+.section-sub { color: #888; margin-bottom: 2rem; }
+.section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2rem; }
+
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
+.book-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.book-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(26,18,8,0.12); }
+.book-cover {
+    height: 200px;
+    background: linear-gradient(135deg, var(--parchment), var(--border));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+.book-cover img { width: 100%; height: 100%; object-fit: cover; }
+.book-status {
+    position: absolute; top: 8px; right: 8px;
+    padding: 0.2rem 0.5rem; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 700;
+}
+.status-dispo { background: #d1fae5; color: #065f46; }
+.status-indispo { background: #fee2e2; color: #991b1b; }
+.book-info { padding: 1rem; }
+.book-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1.3; }
+.book-author { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+.book-price { font-weight: 700; color: var(--amber); font-size: 0.9rem; }
+
+.categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+.cat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.2s;
+}
+.cat-card:hover { background: var(--parchment); border-color: var(--amber); transform: translateY(-2px); }
+.cat-name { font-weight: 600; font-size: 0.9rem; }
+
+.how-it-works { background: var(--parchment); padding: 3rem 2rem; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; max-width: 1200px; margin: 2rem auto 0; }
+.step { text-align: center; }
+.step-num { width: 52px; height: 52px; border-radius: 50%; background: var(--amber); color: #fff; font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+.step h3 { font-weight: 700; margin-bottom: 0.4rem; }
+.step p { font-size: 0.88rem; color: #666; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h1>Louez vos <em>livres préférés</em> en ligne</h1>
+        <p>Des milliers de titres disponibles, réservation simple et rapide, livraison ou retrait en bibliothèque.</p>
+        <div class="hero-btns">
+            <a href="/livres/" class="primary"> Parcourir le catalogue</a>
+            {% if not user.is_authenticated %}
+            <a href="/accounts/login/" class="secondary">Se connecter</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="stats-bar">
+    <div class="inner">
+        <div class="stat"><div class="number">{{ total_livres }}+</div><div class="label">Livres disponibles</div></div>
+        <div class="stat"><div class="number">{{ categories.count }}</div><div class="label">Catégories</div></div>
+        <div class="stat"><div class="number">5 MAD</div><div class="label">À partir de / jour</div></div>
+        <div class="stat"><div class="number">30j</div><div class="label">Durée max</div></div>
+    </div>
+</div>
+
+<div class="container">
+    {% if categories %}
+    <div class="section">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Parcourir par catégorie</div>
+                <div class="section-sub">Trouvez le livre qui vous correspond</div>
+            </div>
+        </div>
+        <div class="categories-grid">
+            {% for cat in categories %}
+            <a href="/livres/?categorie={{ cat.id }}" class="cat-card">
+                <div class="cat-name">{{ cat.nom }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Nouveaux arrivages</div>
+                <div class="section-sub">Les derniers livres ajoutés au catalogue</div>
+            </div>
+            <a href="/livres/" class="btn btn-outline">Voir tout →</a>
+        </div>
+        <div class="books-grid">
+            {% for livre in livres_recents %}
+            <a href="/livres/{{ livre.pk }}/" class="book-card">
+                <div class="book-cover">
+                    {% if livre.couverture %}
+                    <img src="{{ livre.couverture.url }}" alt="{{ livre.titre }}">
+                    {% else %}{% endif %}
+                    <div class="book-status {% if livre.est_disponible %}status-dispo{% else %}status-indispo{% endif %}">
+                        {% if livre.est_disponible %}Disponible{% else %}Indisponible{% endif %}
+                    </div>
+                </div>
+                <div class="book-info">
+                    <div class="book-title">{{ livre.titre }}</div>
+                    <div class="book-author">{{ livre.auteur }}</div>
+                    <div class="book-price">{{ livre.prix_location_jour }} MAD / jour</div>
+                </div>
+            </a>
+            {% empty %}
+            <p style="color:#888; grid-column: 1/-1">Aucun livre disponible pour l'instant.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="how-it-works">
+    <div style="text-align:center; max-width:600px; margin:0 auto;">
+        <div class="section-title">Comment ça marche ?</div>
+        <div class="section-sub">Réservez votre livre en 3 étapes simples</div>
+    </div>
+    <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>Choisissez</h3><p>Parcourez notre catalogue et sélectionnez le livre qui vous intéresse.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>Réservez</h3><p>Choisissez votre période de location et confirmez votre réservation en ligne.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>Profitez</h3><p>Récupérez votre livre et retournez-le à la fin de votre période.</p></div>
+    </div>
+</div>
+{% endblock %}

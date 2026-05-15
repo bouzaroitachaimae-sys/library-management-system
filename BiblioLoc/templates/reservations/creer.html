@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Réserver — {{ livre.titre }}{% endblock %}
+{% block extra_css %}
+<style>
+.reservation-layout { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; padding: 2rem 0; }
+.form-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 2rem; }
+.form-card h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem; }
+.form-card .sub { color: #888; margin-bottom: 2rem; font-size: 0.9rem; }
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; }
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border);
+    border-radius: 8px; font-family: inherit; font-size: 0.9rem;
+    background: var(--cream); transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--amber); }
+.date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.errorlist { list-style: none; color: var(--rust); font-size: 0.85rem; margin-top: 0.3rem; }
+.non-field-errors { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #991b1b; font-size: 0.9rem; }
+
+.summary-card { background: var(--parchment); border: 2px solid var(--amber); border-radius: 16px; padding: 1.5rem; position: sticky; top: 80px; align-self: start; }
+.summary-card h3 { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.2rem; margin-bottom: 1.5rem; }
+.summary-book { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.summary-cover { width: 60px; height: 80px; background: var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; flex-shrink: 0; }
+.summary-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.summary-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.95rem; }
+.summary-author { font-size: 0.8rem; color: #888; }
+.calc-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; }
+.calc-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 1.2rem; padding-top: 0.75rem; border-top: 1px solid var(--border); margin-top: 0.5rem; color: var(--amber); font-family: 'Playfair Display', serif; }
+.price-per-day { font-size: 0.85rem; color: #888; }
+.info-box { background: rgba(200,134,10,0.1); border: 1px solid var(--amber); border-radius: 8px; padding: 0.75rem; font-size: 0.82rem; color: #7a4f00; margin-top: 1rem; }
+</style>
+<script>
+function updateCalc() {
+    const debut = document.getElementById('id_date_debut').value;
+    const fin = document.getElementById('id_date_fin').value;
+    const prixJour = parseFloat('{{ livre.prix_location_jour|default:"0" }}');
+    if (debut && fin) {
+        const d1 = new Date(debut), d2 = new Date(fin);
+        const jours = Math.max(1, Math.round((d2 - d1) / (1000*60*60*24)) + 1);
+        const total = (jours * prixJour).toFixed(2);
+        document.getElementById('calc-jours').textContent = jours + ' jour' + (jours > 1 ? 's' : '');
+        document.getElementById('calc-total').textContent = total + ' MAD';
+    }
+</script>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div style="padding: 1rem 0; font-size: 0.85rem; color: #888;">
+        <a href="/" style="color: inherit; text-decoration: none;">Accueil</a> ›
+        <a href="/livres/" style="color: inherit; text-decoration: none;">Catalogue</a> ›
+        <a href="/livres/{{ livre.pk }}/" style="color: inherit; text-decoration: none;">{{ livre.titre }}</a> ›
+        Réserver
+    </div>
+    <div class="reservation-layout">
+        <div class="form-card">
+            <h2>Choisir une période</h2>
+            <p class="sub">Sélectionnez vos dates de location pour <strong>{{ livre.titre }}</strong></p>
+            
+            {% if form.non_field_errors %}
+            <div class="non-field-errors">
+                {% for error in form.non_field_errors %} {{ error }}{% endfor %}
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="date-grid">
+                    <div class="form-group">
+                        <label> Date de début</label>
+                        {{ form.date_debut }}
+                        {% if form.date_debut.errors %}<ul class="errorlist">{% for e in form.date_debut.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label> Date de fin</label>
+                        {{ form.date_fin }}
+                        {% if form.date_fin.errors %}<ul class="errorlist">{% for e in form.date_fin.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label> Notes (optionnel)</label>
+                    {{ form.notes }}
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                    <button type="submit" class="btn btn-amber" style="flex:1; justify-content:center; padding:0.85rem;"> Confirmer la réservation</button>
+                    <a href="/livres/{{ livre.pk }}/" class="btn btn-outline">Annuler</a>
+                </div>
+            </form>
+        </div>
+        <div class="summary-card">
+            <h3>Récapitulatif</h3>
+            <div class="summary-book">
+                <div class="summary-cover">
+                    {% if livre.couverture %}<img src="{{ livre.couverture.url }}" alt="">{% else %}{% endif %}
+                </div>
+                <div>
+                    <div class="summary-title">{{ livre.titre }}</div>
+                    <div class="summary-author">{{ livre.auteur }}</div>
+                    {% if livre.categorie %}<div style="font-size:0.75rem; color:#888; margin-top:0.25rem;">{{ livre.categorie.nom }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="calc-row"><span>Prix par jour</span><span class="price-per-day">{{ livre.prix_location_jour }} MAD</span></div>
+            <div class="calc-row"><span>Durée</span><span id="calc-jours" style="font-weight:600;">—</span></div>
+            <div class="calc-total"><span>Total estimé</span><span id="calc-total">—</span></div>
+            <div class="info-box">ℹ️ Le prix total sera calculé selon les dates sélectionnées. Durée maximale : 30 jours.</div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('id_date_debut').addEventListener('change', updateCalc);
+document.getElementById('id_date_fin').addEventListener('change', updateCalc);
+// Set min date to today
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('id_date_debut').min = today;
+document.getElementById('id_date_fin').min = today;
+</script>
+{% endblock %}

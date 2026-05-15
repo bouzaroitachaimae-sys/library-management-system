@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Catalogue — BiblioLoc{% endblock %}
+{% block extra_css %}
+<style>
+.catalogue-layout { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; padding: 2rem 0; }
+.sidebar { position: sticky; top: 80px; align-self: start; }
+.filter-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+.filter-card h3 { font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 1rem; font-size: 1rem; }
+.filter-card form input[type=text], .filter-card form select {
+    width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--border);
+    border-radius: 8px; font-family: inherit; font-size: 0.9rem;
+    background: var(--cream); margin-bottom: 0.75rem;
+}
+.filter-card form button { width: 100%; }
+.cat-filter-list { list-style: none; }
+.cat-filter-list li a { display: block; padding: 0.4rem 0.5rem; border-radius: 6px; text-decoration: none; color: var(--ink); font-size: 0.9rem; transition: all 0.15s; }
+.cat-filter-list li a:hover { background: var(--parchment); }
+.cat-filter-list li a.active { background: var(--parchment); color: var(--amber); font-weight: 600; }
+
+.main-content h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; margin-bottom: 0.25rem; }
+.result-count { color: #888; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem; }
+.book-card { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); transition: all 0.2s; text-decoration: none; color: inherit; display: block; }
+.book-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(26,18,8,0.1); }
+.book-cover { height: 180px; background: linear-gradient(135deg, var(--parchment), var(--border)); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; position: relative; overflow: hidden; }
+.book-cover img { width: 100%; height: 100%; object-fit: cover; }
+.book-status { position: absolute; top: 8px; right: 8px; padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+.status-dispo { background: #d1fae5; color: #065f46; }
+.status-indispo { background: #fee2e2; color: #991b1b; }
+.book-info { padding: 0.85rem; }
+.book-title { font-family: 'Playfair Display', serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; line-height: 1.3; }
+.book-author { font-size: 0.78rem; color: #888; margin-bottom: 0.4rem; }
+.book-footer { display: flex; justify-content: space-between; align-items: center; }
+.book-price { font-weight: 700; color: var(--amber); font-size: 0.88rem; }
+.book-expl { font-size: 0.75rem; color: #aaa; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="catalogue-layout">
+        <aside class="sidebar">
+            <div class="filter-card">
+                <h3>Rechercher</h3>
+                <form method="get">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Titre, auteur...">
+                    <select name="categorie">
+                        <option value="">Toutes les catégories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if cat_selectee == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nom }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-amber">Rechercher</button>
+                </form>
+            </div>
+            {% if categories %}
+            <div class="filter-card">
+                <h3>Categories</h3>
+                <ul class="cat-filter-list">
+                    <li><a href="/livres/" {% if not cat_selectee %}class="active"{% endif %}>Toutes</a></li>
+                    {% for cat in categories %}
+                    <li><a href="/livres/?categorie={{ cat.id }}" {% if cat_selectee == cat.id|stringformat:"s" %}class="active"{% endif %}>{{ cat.nom }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </aside>
+        <main class="main-content">
+            <h2>Catalogue des livres</h2>
+            <p class="result-count">
+                {% if q %}Résultats pour "{{ q }}" — {% endif %}
+                {{ livres|length }} livre{{ livres|length|pluralize }} trouvé{{ livres|length|pluralize }}
+            </p>
+            <div class="books-grid">
+                {% for livre in livres %}
+                <a href="/livres/{{ livre.pk }}/" class="book-card">
+                    <div class="book-cover">
+                        {% if livre.couverture %}<img src="{{ livre.couverture.url }}" alt="{{ livre.titre }}">{% else %}{% endif %}
+                        <div class="book-status {% if livre.est_disponible %}status-dispo{% else %}status-indispo{% endif %}">
+                            {% if livre.est_disponible %} Disponible{% else %} Loué{% endif %}
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <div class="book-title">{{ livre.titre }}</div>
+                        <div class="book-author">{{ livre.auteur }}</div>
+                        <div class="book-footer">
+                            <span class="book-price">{{ livre.prix_location_jour }} MAD/j</span>
+                            <span class="book-expl">{{ livre.exemplaires_disponibles }}/{{ livre.nombre_exemplaires }} ex.</span>
+                        </div>
+                    </div>
+                </a>
+                {% empty %}
+                <div style="grid-column:1/-1; text-align:center; padding:3rem; color:#888;">
+                    <div style="font-size:3rem; margin-bottom:1rem"></div>
+                    <p>Aucun livre trouvé.</p>
+                    <a href="/livres/" class="btn btn-outline" style="margin-top:1rem">Voir tous les livres</a>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

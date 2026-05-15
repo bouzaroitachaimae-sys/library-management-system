@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Réservation #{{ reservation.pk }} — BiblioLoc{% endblock %}
+{% block extra_css %}
+<style>
+.detail-grid { display: grid; grid-template-columns: 1fr 360px; gap: 2rem; padding: 2rem 0 3rem; }
+.info-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; }
+.info-card h2 { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.3rem; margin-bottom: 1.25rem; }
+.info-row { display: flex; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.info-row:last-child { border-bottom: none; }
+.info-row .key { color: #888; }
+.info-row .val { font-weight: 600; }
+.timeline { padding: 0; list-style: none; }
+.timeline-item { display: flex; gap: 1rem; padding-bottom: 1.5rem; position: relative; }
+.timeline-item::before { content: ''; position: absolute; left: 16px; top: 32px; bottom: 0; width: 2px; background: var(--border); }
+.timeline-item:last-child::before { display: none; }
+.tl-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.tl-dot.done { background: var(--sage); }
+.tl-dot.current { background: var(--amber); }
+.tl-dot.future { background: var(--border); }
+.tl-content .label { font-weight: 700; font-size: 0.9rem; }
+.tl-content .date { font-size: 0.8rem; color: #888; }
+.price-card { background: var(--parchment); border: 2px solid var(--amber); border-radius: 16px; padding: 1.75rem; position: sticky; top: 80px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Réservation #{{ reservation.pk }}</h1>
+        <p style="color:#888">{{ reservation.livre.titre }}</p>
+    </div>
+</div>
+<div class="container">
+    <div class="detail-grid">
+        <div>
+            <div class="info-card">
+                <h2> Informations du livre</h2>
+                <div class="info-row"><span class="key">Titre</span><span class="val">{{ reservation.livre.titre }}</span></div>
+                <div class="info-row"><span class="key">Auteur</span><span class="val">{{ reservation.livre.auteur }}</span></div>
+                {% if reservation.livre.categorie %}<div class="info-row"><span class="key">Catégorie</span><span class="val">{{ reservation.livre.categorie.nom }}</span></div>{% endif %}
+            </div>
+            <div class="info-card">
+                <h2> Période de réservation</h2>
+                <div class="info-row"><span class="key">Date de début</span><span class="val">{{ reservation.date_debut|date:"l d F Y" }}</span></div>
+                <div class="info-row"><span class="key">Date de fin</span><span class="val">{{ reservation.date_fin|date:"l d F Y" }}</span></div>
+                <div class="info-row"><span class="key">Durée</span><span class="val">{{ reservation.duree_jours }} jour{{ reservation.duree_jours|pluralize }}</span></div>
+                <div class="info-row"><span class="key">Réservé le</span><span class="val">{{ reservation.date_reservation|date:"d/m/Y H:i" }}</span></div>
+                {% if reservation.date_retour_effectif %}<div class="info-row"><span class="key">Retour effectué</span><span class="val">{{ reservation.date_retour_effectif|date:"d/m/Y" }}</span></div>{% endif %}
+                {% if reservation.notes %}<div class="info-row"><span class="key">Notes</span><span class="val">{{ reservation.notes }}</span></div>{% endif %}
+            </div>
+            {% if reservation.est_en_retard %}
+            <div style="background:#fee2e2; border:1px solid #fca5a5; border-radius:12px; padding:1.25rem; color:#991b1b;">
+                 <strong>Retard de {{ reservation.jours_retard }} jour{{ reservation.jours_retard|pluralize }}</strong> — Veuillez retourner le livre dès que possible.
+            </div>
+            {% endif %}
+        </div>
+        <div>
+            <div class="price-card">
+                <h3 style="font-family:'Playfair Display',serif; font-weight:900; font-size:1.2rem; margin-bottom:1.25rem;"> Détail du prix</h3>
+                <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.5rem;"><span>Prix / jour</span><span>{{ reservation.livre.prix_location_jour }} MAD</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.5rem;"><span>Durée</span><span>{{ reservation.duree_jours }} j</span></div>
+                {% if reservation.penalite > 0 %}
+                <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.5rem;color:var(--rust);"><span>Pénalité retard</span><span>{{ reservation.penalite }} MAD</span></div>
+                {% endif %}
+                <div style="display:flex;justify-content:space-between;font-weight:900;font-size:1.3rem;padding-top:0.75rem;border-top:1px solid var(--border);color:var(--amber);font-family:'Playfair Display',serif;"><span>Total</span><span>{{ reservation.prix_total }} MAD</span></div>
+                <div style="margin-top:1rem; text-align:center;">
+                    {% if reservation.statut == 'en_attente' %}<span class="badge badge-warning" style="font-size:0.9rem;padding:0.4rem 0.8rem;"> En attente de confirmation</span>
+                    {% elif reservation.statut == 'confirmee' %}<span class="badge badge-info" style="font-size:0.9rem;padding:0.4rem 0.8rem;"> Confirmée</span>
+                    {% elif reservation.statut == 'en_cours' %}<span class="badge badge-success" style="font-size:0.9rem;padding:0.4rem 0.8rem;"> En cours</span>
+                    {% elif reservation.statut == 'terminee' %}<span class="badge badge-secondary" style="font-size:0.9rem;padding:0.4rem 0.8rem;"> Terminée</span>
+                    {% elif reservation.statut == 'annulee' %}<span class="badge badge-danger" style="font-size:0.9rem;padding:0.4rem 0.8rem;"> Annulée</span>
+                    {% endif %}
+                </div>
+                <div style="margin-top:1.5rem;display:flex;flex-direction:column;gap:0.5rem;">
+                    {% if reservation.statut in 'en_attente,confirmee' %}
+                    <form method="post" action="/reservations/annuler/{{ reservation.pk }}/" onsubmit="return confirm('Confirmer ?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center;"> Annuler</button>
+                    </form>
+                    {% endif %}
+                    <a href="/reservations/mes-reservations/" class="btn btn-outline" style="justify-content:center;">← Mes réservations</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
